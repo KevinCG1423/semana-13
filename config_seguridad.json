@@ -1,0 +1,129 @@
+{
+  "archivo_entrada": "empleados_rrhh.csv",
+  "archivo_anonimizado": "empleados_anonimizados.csv",
+  "archivo_cifrado": "empleados_anonimizados.csv.enc",
+  "archivo_manifiesto": "manifiesto_transferencia.json",
+  "archivo_informe": "informe_seguridad.json",
+  "variables_entorno": {
+    "clave_hmac": "CLAVE_HMAC",
+    "clave_fernet": "CLAVE_FERNET",
+    "token_api": "API_TOKEN"
+  },
+  "anonimizacion": {
+    "columna_rut": "rut",
+    "columna_pseudonimo": "id_pseudo",
+    "columna_edad": "edad",
+    "limites_edad": [
+      0,
+      30,
+      40,
+      50,
+      120
+    ],
+    "etiquetas_edad": [
+      "<30",
+      "30-39",
+      "40-49",
+      "50+"
+    ],
+    "columna_sueldo": "sueldo_bruto",
+    "paso_sueldo": 500000,
+    "columnas_suprimir": [
+      "id_empleado",
+      "rut",
+      "nombre",
+      "email",
+      "edad",
+      "sueldo_bruto"
+    ],
+    "cuasi_identificadores": [
+      "area",
+      "tramo_edad",
+      "tramo_sueldo"
+    ]
+  },
+  "tabla": "empleados",
+  "roles": {
+    "analista": {
+      "columnas": [
+        "area",
+        "cargo",
+        "edad",
+        "fecha_ingreso"
+      ],
+      "escritura": false
+    },
+    "auditor": {
+      "columnas": [
+        "id_empleado",
+        "area",
+        "cargo",
+        "sueldo_bruto",
+        "fecha_ingreso"
+      ],
+      "escritura": false
+    },
+    "rrhh": {
+      "columnas": "*",
+      "escritura": true
+    }
+  },
+  "casos_prueba": [
+    {
+      "rol": "analista",
+      "sql": "SELECT area, AVG(edad) FROM empleados GROUP BY area",
+      "esperado": "OK"
+    },
+    {
+      "rol": "analista",
+      "sql": "SELECT COUNT(*) FROM empleados",
+      "esperado": "OK"
+    },
+    {
+      "rol": "analista",
+      "sql": "SELECT rut FROM empleados",
+      "esperado": "DENEGADO"
+    },
+    {
+      "rol": "analista",
+      "sql": "SELECT area, sueldo_bruto FROM empleados",
+      "esperado": "DENEGADO"
+    },
+    {
+      "rol": "analista",
+      "sql": "DELETE FROM empleados",
+      "esperado": "DENEGADO"
+    },
+    {
+      "rol": "auditor",
+      "sql": "SELECT area, MAX(sueldo_bruto) FROM empleados GROUP BY area",
+      "esperado": "OK"
+    },
+    {
+      "rol": "auditor",
+      "sql": "SELECT * FROM empleados",
+      "esperado": "DENEGADO"
+    },
+    {
+      "rol": "auditor",
+      "sql": "UPDATE empleados SET cargo = 'X'",
+      "esperado": "DENEGADO"
+    },
+    {
+      "rol": "rrhh",
+      "sql": "SELECT nombre, sueldo_bruto FROM empleados LIMIT 3",
+      "esperado": "OK"
+    },
+    {
+      "rol": "rrhh",
+      "sql": "UPDATE empleados SET cargo = 'Analista' WHERE id_empleado = 'E0001'",
+      "esperado": "OK"
+    }
+  ],
+  "api": {
+    "url": "https://api.ejemplo.cl/v1/indicadores",
+    "intentos": 4,
+    "espera_base": 0.5,
+    "timeout": 10
+  }
+}
